@@ -1,47 +1,51 @@
-﻿using UnityEditor;
-using System;
+﻿using System;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace AssetBundleBrowser.AssetBundleDataSource
 {
     /// <summary>
     /// Build Info struct used by ABDataSource to pass needed build data around.
     /// </summary>
+    [Serializable]
     public partial class ABBuildInfo
     {
         /// <summary>
         /// Directory to place build result
         /// </summary>
-        public string outputDirectory
+        public string OutputDirectory
         {
-            get { return m_outputDirectory; }
-            set { m_outputDirectory = value; }
+            get => m_outputDirectory;
+            set => m_outputDirectory = value;
         }
-        private string m_outputDirectory;
+        [SerializeField] private string m_outputDirectory;
         /// <summary>
         /// Standard asset bundle build options.
         /// </summary>
-        public BuildAssetBundleOptions options
+        public BuildAssetBundleOptions Options
         {
-            get { return m_options; }
-            set { m_options = value; }
+            get => m_options;
+            set => m_options = value;
         }
-        private BuildAssetBundleOptions m_options;
+        [SerializeField] private BuildAssetBundleOptions m_options;
         /// <summary>
         /// Target platform for build.
         /// </summary>
-        public BuildTarget buildTarget
+        public BuildTarget BuildTarget
         {
-            get { return m_buildTarget; }
-            set { m_buildTarget = value; }
+            get => m_buildTarget;
+            set => m_buildTarget = value;
         }
-        private BuildTarget m_buildTarget;
+        [SerializeField] private BuildTarget m_buildTarget;
         /// <summary>
         /// Callback for build event.
         /// </summary>
-        public Action<string> onBuild
+        public Action<string> OnBuild
         {
-            get { return m_onBuild; }
-            set { m_onBuild = value; }
+            get => m_onBuild;
+            set => m_onBuild = value;
         }
         private Action<string> m_onBuild;
     }
@@ -56,11 +60,8 @@ namespace AssetBundleBrowser.AssetBundleDataSource
     ///   public static List<ABDataSource> CreateDataSources();
     /// 
     /// </summary>
-    public partial interface ABDataSource
+    public partial interface IABDataSource
     {
-        //// all derived classes must implement the following interface in order to be picked up by the browser.
-        //public static List<ABDataSource> CreateDataSources();
-
         /// <summary>
         /// Name of DataSource. Displayed in menu as "Name (ProvidorName)"
         /// </summary>
@@ -73,7 +74,7 @@ namespace AssetBundleBrowser.AssetBundleDataSource
         /// <summary>
         /// Array of paths in bundle.
         /// </summary>
-        string[] GetAssetPathsFromAssetBundle (string assetBundleName);
+        string[] GetAssetPathsFromAssetBundle(string assetBundleName);
         /// <summary>
         /// Name of bundle explicitly associated with asset at path.  
         /// </summary>
@@ -98,7 +99,7 @@ namespace AssetBundleBrowser.AssetBundleDataSource
         /// <summary>
         /// Sets the asset bundle name (and variant) on a given asset
         /// </summary>
-        void SetAssetBundleNameAndVariant (string assetPath, string bundleName, string variantName);
+        void SetAssetBundleNameAndVariant(string assetPath, string bundleName, string variantName);
         /// <summary>
         /// Clears out any asset bundle names that do not have assets associated with them.
         /// </summary>
@@ -119,8 +120,8 @@ namespace AssetBundleBrowser.AssetBundleDataSource
 
         /// <summary>
         /// Executes data source's implementation of asset bundle building.
-        ///   Called by "build" button in build tab of tool.
+        /// Called by "build" button in build tab of tool.
         /// </summary>
-        bool BuildAssetBundles (ABBuildInfo info);
+        bool BuildAssetBundles(ABBuildInfo info);
     }
 }

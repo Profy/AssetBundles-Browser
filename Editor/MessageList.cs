@@ -1,6 +1,8 @@
-﻿using UnityEditor;
+﻿using System.Collections.Generic;
+
+using UnityEditor;
+
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace AssetBundleBrowser
 {
@@ -8,14 +10,12 @@ namespace AssetBundleBrowser
     {
         private Vector2 m_ScrollPosition = Vector2.zero;
 
-        private GUIStyle[] m_Style = new GUIStyle[2];
-
-        IEnumerable<AssetBundleModel.AssetInfo> m_Selecteditems;
-        List<MessageSystem.Message> m_Messages;
-
-        Vector2 m_Dimensions = new Vector2(0, 0);
-        const float k_ScrollbarPadding = 16f;
-        const float k_BorderSize = 1f;
+        private readonly GUIStyle[] m_Style = new GUIStyle[2];
+        private IEnumerable<AssetBundleModel.AssetInfo> m_Selecteditems;
+        private List<MessageSystem.Message> m_Messages;
+        private Vector2 m_Dimensions = new Vector2(0, 0);
+        private const float k_ScrollbarPadding = 16f;
+        private const float k_BorderSize = 1f;
 
 
         internal MessageList()
@@ -37,8 +37,8 @@ namespace AssetBundleBrowser
         {
             DrawOutline(fullPos, 1f);
 
-            Rect pos = new Rect(fullPos.x + k_BorderSize, fullPos.y + k_BorderSize, fullPos.width - 2 * k_BorderSize, fullPos.height - 2 * k_BorderSize);
-            
+            Rect pos = new Rect(fullPos.x + k_BorderSize, fullPos.y + k_BorderSize, fullPos.width - (2 * k_BorderSize), fullPos.height - (2 * k_BorderSize));
+
 
             if (m_Dimensions.y == 0 || m_Dimensions.x != pos.width - k_ScrollbarPadding)
             {
@@ -54,14 +54,14 @@ namespace AssetBundleBrowser
             m_ScrollPosition = GUI.BeginScrollView(pos, m_ScrollPosition, new Rect(0, 0, m_Dimensions.x, m_Dimensions.y));
             int counter = 0;
             float runningHeight = 0.0f;
-            foreach (var message in m_Messages) 
+            foreach (var message in m_Messages)
             {
                 int index = counter % 2;
                 var content = new GUIContent(message.message);
                 float height = m_Style[index].CalcHeight(content, m_Dimensions.x);
 
                 GUI.Box(new Rect(0, runningHeight, m_Dimensions.x, height), content, m_Style[index]);
-                GUI.DrawTexture(new Rect(0, runningHeight, 32f, 32f), message.icon);
+                GUI.DrawTexture(new Rect(0, runningHeight, 32f, 32f), message.Icon);
                 //TODO - cleanup formatting issues and switch to HelpBox
                 //EditorGUI.HelpBox(new Rect(0, runningHeight, m_dimensions.x, height), message.message, (MessageType)message.severity);
 
@@ -81,7 +81,7 @@ namespace AssetBundleBrowser
         {
             m_Messages.Clear();
             m_Dimensions.y = 0f;
-            if(m_Selecteditems != null)
+            if (m_Selecteditems != null)
             {
                 foreach (var asset in m_Selecteditems)
                 {
@@ -93,7 +93,7 @@ namespace AssetBundleBrowser
         internal static void DrawOutline(Rect rect, float size)
         {
             Color color = new Color(0.6f, 0.6f, 0.6f, 1.333f);
-            if(EditorGUIUtility.isProSkin)
+            if (EditorGUIUtility.isProSkin)
             {
                 color.r = 0.12f;
                 color.g = 0.12f;
@@ -101,14 +101,16 @@ namespace AssetBundleBrowser
             }
 
             if (Event.current.type != EventType.Repaint)
+            {
                 return;
+            }
 
             Color orgColor = GUI.color;
-            GUI.color = GUI.color * color;
+            GUI.color *= color;
             GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, size), EditorGUIUtility.whiteTexture);
             GUI.DrawTexture(new Rect(rect.x, rect.yMax - size, rect.width, size), EditorGUIUtility.whiteTexture);
-            GUI.DrawTexture(new Rect(rect.x, rect.y + 1, size, rect.height - 2 * size), EditorGUIUtility.whiteTexture);
-            GUI.DrawTexture(new Rect(rect.xMax - size, rect.y + 1, size, rect.height - 2 * size), EditorGUIUtility.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.y + 1, size, rect.height - (2 * size)), EditorGUIUtility.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.xMax - size, rect.y + 1, size, rect.height - (2 * size)), EditorGUIUtility.whiteTexture);
 
             GUI.color = orgColor;
         }

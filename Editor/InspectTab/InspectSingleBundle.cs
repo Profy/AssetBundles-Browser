@@ -1,12 +1,14 @@
-using UnityEditor;
-using UnityEngine;
 using System.IO;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace AssetBundleBrowser
 {
-    class SingleBundleInspector
+    internal class SingleBundleInspector
     {
-        internal static string currentPath { get; set; }
+        internal static string CurrentPath { get; set; }
 
 
         internal SingleBundleInspector() { }
@@ -24,13 +26,13 @@ namespace AssetBundleBrowser
         internal void SetBundle(AssetBundle bundle, string path = "", AssetBundleInspectTab.InspectTabData inspectTabData = null, AssetBundleInspectTab assetBundleInspectTab = null)
         {
             //static var...
-            currentPath = path;
+            CurrentPath = path;
             m_inspectTabData = inspectTabData;
             m_assetBundleInspectTab = assetBundleInspectTab;
 
             //members
             m_Editor = null;
-            if(bundle != null)
+            if (bundle != null)
             {
                 m_Editor = Editor.CreateEditor(bundle);
             }
@@ -53,25 +55,31 @@ namespace AssetBundleBrowser
                 EditorGUILayout.EndScrollView();
                 GUILayout.EndArea();
             }
-            else if(!string.IsNullOrEmpty(currentPath))
+            else if (!string.IsNullOrEmpty(CurrentPath))
             {
-                var style = new GUIStyle(GUI.skin.label);
-                style.alignment = TextAnchor.MiddleCenter;
-                style.wordWrap = true;
+                var style = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    wordWrap = true
+                };
                 GUI.Label(m_Position, new GUIContent("Invalid bundle selected"), style);
 
-                if (m_inspectTabData != null && GUI.Button(new Rect(new Vector2((m_Position.position.x + m_Position.width / 2f) - 37.5f, (m_Position.position.y + m_Position.height / 2f) + 15), new Vector2(75, 30)), "Ignore file"))
+                if (m_inspectTabData != null && GUI.Button(new Rect(new Vector2(m_Position.position.x + (m_Position.width / 2f) - 37.5f, m_Position.position.y + (m_Position.height / 2f) + 15), new Vector2(75, 30)), "Ignore file"))
                 {
-                    var possibleFolderData = m_inspectTabData.FolderDataContainingFilePath(currentPath);
+                    var possibleFolderData = m_inspectTabData.FolderDataContainingFilePath(CurrentPath);
                     if (possibleFolderData != null)
                     {
-                        if (!possibleFolderData.ignoredFiles.Contains(currentPath))
-                            possibleFolderData.ignoredFiles.Add(currentPath);
+                        if (!possibleFolderData.IgnoredFiles.Contains(CurrentPath))
+                        {
+                            possibleFolderData.IgnoredFiles.Add(CurrentPath);
+                        }
 
-                        if(m_assetBundleInspectTab != null)
+                        if (m_assetBundleInspectTab != null)
+                        {
                             m_assetBundleInspectTab.RefreshBundles();
+                        }
                     }
-                } 
+                }
             }
         }
     }
@@ -87,21 +95,27 @@ namespace AssetBundleBrowser
 
             using (new EditorGUI.DisabledScope(true))
             {
-                var leftStyle = new GUIStyle(GUI.skin.GetStyle("Label"));
-                leftStyle.alignment = TextAnchor.UpperLeft;
+                var leftStyle = new GUIStyle(GUI.skin.GetStyle("Label"))
+                {
+                    alignment = TextAnchor.UpperLeft
+                };
                 GUILayout.Label(new GUIContent("Name: " + bundle.name), leftStyle);
 
                 long fileSize = -1;
-                if(!System.String.IsNullOrEmpty(SingleBundleInspector.currentPath) && File.Exists(SingleBundleInspector.currentPath) )
+                if (!string.IsNullOrEmpty(SingleBundleInspector.CurrentPath) && File.Exists(SingleBundleInspector.CurrentPath))
                 {
-                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(SingleBundleInspector.currentPath);
+                    FileInfo fileInfo = new FileInfo(SingleBundleInspector.CurrentPath);
                     fileSize = fileInfo.Length;
                 }
 
                 if (fileSize < 0)
+                {
                     GUILayout.Label(new GUIContent("Size: unknown"), leftStyle);
+                }
                 else
+                {
                     GUILayout.Label(new GUIContent("Size: " + EditorUtility.FormatBytes(fileSize)), leftStyle);
+                }
 
                 var assetNames = bundle.GetAllAssetNames();
                 pathFoldout = EditorGUILayout.Foldout(pathFoldout, "Source Asset Paths");
@@ -109,7 +123,10 @@ namespace AssetBundleBrowser
                 {
                     EditorGUI.indentLevel++;
                     foreach (var asset in assetNames)
+                    {
                         EditorGUILayout.LabelField(asset);
+                    }
+
                     EditorGUI.indentLevel--;
                 }
 

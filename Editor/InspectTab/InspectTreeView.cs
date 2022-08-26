@@ -1,51 +1,59 @@
-using UnityEngine;
-using UnityEditor.IMGUI.Controls;
 using System.Collections.Generic;
 using System.Linq;
 
+using UnityEditor.IMGUI.Controls;
+
+using UnityEngine;
+
 namespace AssetBundleBrowser
 {
-	internal class InspectTreeItem : TreeViewItem
-	{
-        internal string bundlePath { get; private set; }
-            
-		internal InspectTreeItem(string path, int depth) : base(path.GetHashCode(), depth, path)
-		{
-            bundlePath = path;
+    internal class InspectTreeItem : TreeViewItem
+    {
+        internal string BundlePath { get; private set; }
+
+        internal InspectTreeItem(string path, int depth) : base(path.GetHashCode(), depth, path)
+        {
+            BundlePath = path;
         }
         internal InspectTreeItem(string path, int depth, string prettyName) : base(path.GetHashCode(), depth, prettyName)
         {
-            bundlePath = path;
+            BundlePath = path;
         }
-		internal InspectTreeItem(string path, string parentPath, int depth, string prettyName) : base((path+parentPath).GetHashCode(), depth, prettyName)
-		{
-			bundlePath = path;
-		}
+        internal InspectTreeItem(string path, string parentPath, int depth, string prettyName) : base((path + parentPath).GetHashCode(), depth, prettyName)
+        {
+            BundlePath = path;
+        }
     }
 
-	class InspectBundleTree : TreeView
-	{
-		AssetBundleInspectTab m_InspectTab;
-		internal InspectBundleTree(TreeViewState s, AssetBundleInspectTab parent) : base(s)
-		{
-			m_InspectTab = parent;
-			showBorder = true;
-		}
+    internal class InspectBundleTree : TreeView
+    {
+        private readonly AssetBundleInspectTab m_InspectTab;
+        internal InspectBundleTree(TreeViewState s, AssetBundleInspectTab parent) : base(s)
+        {
+            m_InspectTab = parent;
+            showBorder = true;
+        }
 
-		protected override TreeViewItem BuildRoot()
-		{
-			var root = new TreeViewItem(-1, -1);
-			root.children = new List<TreeViewItem>();
-			if (m_InspectTab == null)
-				Debug.Log("Unknown problem in AssetBundle Browser Inspect tab.  Restart Browser and try again, or file ticket on github.");
-			else
-			{
-				foreach (var folder in m_InspectTab.BundleList)
-				{
+        protected override TreeViewItem BuildRoot()
+        {
+            var root = new TreeViewItem(-1, -1)
+            {
+                children = new List<TreeViewItem>()
+            };
+            if (m_InspectTab == null)
+            {
+                Debug.Log("Unknown problem in AssetBundle Browser Inspect tab.  Restart Browser and try again, or file ticket on github.");
+            }
+            else
+            {
+                foreach (var folder in m_InspectTab.BundleList)
+                {
                     if (System.String.IsNullOrEmpty(folder.Key))
                     {
-                        foreach(var path in folder.Value)
+                        foreach (var path in folder.Value)
+                        {
                             root.AddChild(new InspectTreeItem(path, 0));
+                        }
                     }
                     else
                     {
@@ -55,25 +63,27 @@ namespace AssetBundleBrowser
 
                             var prettyName = path;
                             if (path.StartsWith(folder.Key)) //how could it not?
+                            {
                                 prettyName = path.Remove(0, folder.Key.Length + 1);
+                            }
 
                             folderItem.AddChild(new InspectTreeItem(path, folder.Key, 1, prettyName));
                         }
                         root.AddChild(folderItem);
                     }
-				}
-			}
-			return root;
-		}
+                }
+            }
+            return root;
+        }
 
-		public override void OnGUI(Rect rect)
-		{
-			base.OnGUI(rect);
-			if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && rect.Contains(Event.current.mousePosition))
-			{
-				SetSelection(new int[0], TreeViewSelectionOptions.FireSelectionChanged);
-			}
-		}
+        public override void OnGUI(Rect rect)
+        {
+            base.OnGUI(rect);
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && rect.Contains(Event.current.mousePosition))
+            {
+                SetSelection(new int[0], TreeViewSelectionOptions.FireSelectionChanged);
+            }
+        }
 
         protected override void RowGUI(RowGUIArgs args)
         {
@@ -90,8 +100,10 @@ namespace AssetBundleBrowser
                         foreach (var id in selection)
                         {
                             var item = FindItem(id, rootItem);
-                            if(item.depth == 0)
+                            if (item.depth == 0)
+                            {
                                 RemoveItem(item);
+                            }
                         }
                     }
                     else
@@ -104,34 +116,39 @@ namespace AssetBundleBrowser
         }
         private void RemoveItem(TreeViewItem item)
         {
-            var inspectItem = item as InspectTreeItem;
-            if (inspectItem != null)
-                m_InspectTab.RemoveBundlePath(inspectItem.bundlePath);
+            if (item is InspectTreeItem inspectItem)
+            {
+                m_InspectTab.RemoveBundlePath(inspectItem.BundlePath);
+            }
             else
+            {
                 m_InspectTab.RemoveBundleFolder(item.displayName);
+            }
         }
         protected override void SelectionChanged(IList<int> selectedIds)
-		{
-			base.SelectionChanged(selectedIds);
+        {
+            base.SelectionChanged(selectedIds);
 
             if (selectedIds == null)
-                return;
-
-			if (selectedIds.Count > 0)
-			{
-                m_InspectTab.SetBundleItem(FindRows(selectedIds).Select(tvi => tvi as InspectTreeItem).ToList());
-				//m_InspectTab.SetBundleItem(FindItem(selectedIds[0], rootItem) as InspectTreeItem);
-			}
-			else
             {
-				m_InspectTab.SetBundleItem(null);
+                return;
             }
-		}
 
-		protected override bool CanMultiSelect(TreeViewItem item)
-		{
-			return true;
-		}
-	}
+            if (selectedIds.Count > 0)
+            {
+                m_InspectTab.SetBundleItem(FindRows(selectedIds).Select(tvi => tvi as InspectTreeItem).ToList());
+                //m_InspectTab.SetBundleItem(FindItem(selectedIds[0], rootItem) as InspectTreeItem);
+            }
+            else
+            {
+                m_InspectTab.SetBundleItem(null);
+            }
+        }
+
+        protected override bool CanMultiSelect(TreeViewItem item)
+        {
+            return true;
+        }
+    }
 
 }

@@ -1,10 +1,9 @@
 ﻿using System;
-using UnityEngine;
-using UnityEditor;
-using UnityEngine.Assertions;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEditor.IMGUI.Controls;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace AssetBundleBrowser
 {
@@ -41,7 +40,7 @@ namespace AssetBundleBrowser
             // The enum has masks for Error/Warning/Info that won't ever be in the set
             // this allows for easy checking of IsSet for error rather than specific errors. 
             private MessageFlag m_MessageFlags;
-            private HashSet<MessageFlag> m_MessageSet;
+            private readonly HashSet<MessageFlag> m_MessageSet;
 
 
             internal MessageState()
@@ -58,18 +57,20 @@ namespace AssetBundleBrowser
 
             internal void SetFlag(MessageFlag flag, bool on)
             {
-                if (flag == MessageFlag.Info || flag == MessageFlag.Warning || flag == MessageFlag.Error)
+                if (flag is MessageFlag.Info or MessageFlag.Warning or MessageFlag.Error)
+                {
                     return;
+                }
 
                 if (on)
                 {
                     m_MessageFlags |= flag;
-                    m_MessageSet.Add(flag);
+                    _ = m_MessageSet.Add(flag);
                 }
                 else
                 {
                     m_MessageFlags &= ~flag;
-                    m_MessageSet.Remove(flag);
+                    _ = m_MessageSet.Remove(flag);
                 }
             }
             internal bool IsSet(MessageFlag flag)
@@ -78,26 +79,24 @@ namespace AssetBundleBrowser
             }
             internal bool HasMessages()
             {
-                return (m_MessageFlags != MessageFlag.None);
+                return m_MessageFlags != MessageFlag.None;
             }
 
             internal MessageType HighestMessageLevel()
             {
-                if (IsSet(MessageFlag.Error))
-                    return MessageType.Error;
-                if (IsSet(MessageFlag.Warning))
-                    return MessageType.Warning;
-                if (IsSet(MessageFlag.Info))
-                    return MessageType.Info;
-                return MessageType.None;
+                return IsSet(MessageFlag.Error)
+                    ? MessageType.Error
+                    : IsSet(MessageFlag.Warning) ? MessageType.Warning : IsSet(MessageFlag.Info) ? MessageType.Info : MessageType.None;
             }
             internal MessageFlag HighestMessageFlag()
             {
                 MessageFlag high = MessageFlag.None;
-                foreach(var f in m_MessageSet)
+                foreach (var f in m_MessageSet)
                 {
                     if (f > high)
+                    {
                         high = f;
+                    }
                 }
                 return high;
             }
@@ -105,7 +104,7 @@ namespace AssetBundleBrowser
             internal List<Message> GetMessages()
             {
                 var msgs = new List<Message>();
-                foreach(var f in m_MessageSet)
+                foreach (var f in m_MessageSet)
                 {
                     msgs.Add(GetMessage(f));
                 }
@@ -114,31 +113,35 @@ namespace AssetBundleBrowser
         }
         internal static Texture2D GetIcon(MessageType sev)
         {
-            if (sev == MessageType.Error)
-                return GetErrorIcon();
-            else if (sev == MessageType.Warning)
-                return GetWarningIcon();
-            else if (sev == MessageType.Info)
-                return GetInfoIcon();
-            else
-                return null;
+            return sev == MessageType.Error
+                ? GetErrorIcon()
+                : sev == MessageType.Warning ? GetWarningIcon() : sev == MessageType.Info ? GetInfoIcon() : null;
         }
         private static Texture2D GetErrorIcon()
         {
             if (s_ErrorIcon == null)
+            {
                 FindMessageIcons();
+            }
+
             return s_ErrorIcon;
         }
         private static Texture2D GetWarningIcon()
         {
             if (s_WarningIcon == null)
+            {
                 FindMessageIcons();
+            }
+
             return s_WarningIcon;
         }
         private static Texture2D GetInfoIcon()
         {
             if (s_InfoIcon == null)
+            {
                 FindMessageIcons();
+            }
+
             return s_InfoIcon;
         }
 
@@ -158,40 +161,35 @@ namespace AssetBundleBrowser
 
             internal MessageType severity;
             internal string message;
-            internal Texture2D icon
-            {
-                get
-                {
-                    return GetIcon(severity);
-                }
-            }
+            internal Texture2D Icon => GetIcon(severity);
         }
 
         internal static Message GetMessage(MessageFlag lookup)
         {
             if (s_MessageLookup == null)
+            {
                 InitMessages();
+            }
 
-            Message msg = null;
-            s_MessageLookup.TryGetValue(lookup, out msg);
-            if (msg == null)
-                msg = s_MessageLookup[MessageFlag.None];
+            _ = s_MessageLookup.TryGetValue(lookup, out Message msg);
+            msg ??= s_MessageLookup[MessageFlag.None];
             return msg;
         }
 
         private static void InitMessages()
         {
-            s_MessageLookup = new Dictionary<MessageFlag, Message>();
-
-            s_MessageLookup.Add(MessageFlag.None, new Message(string.Empty, MessageType.None));
-            s_MessageLookup.Add(MessageFlag.EmptyBundle, new Message("This bundle is empty.  Empty bundles cannot get saved with the scene and will disappear from this list if Unity restarts or if various other bundle rename or move events occur.", MessageType.Info));
-            s_MessageLookup.Add(MessageFlag.EmptyFolder, new Message("This folder is either empty or contains only empty children.  Empty bundles cannot get saved with the scene and will disappear from this list if Unity restarts or if various other bundle rename or move events occur.", MessageType.Info));
-            s_MessageLookup.Add(MessageFlag.WarningInChildren, new Message("Warning in child(ren)", MessageType.Warning));
-            s_MessageLookup.Add(MessageFlag.AssetsDuplicatedInMultBundles, new Message("Assets being pulled into this bundle due to dependencies are also being pulled into another bundle.  This will cause duplication in memory", MessageType.Warning));
-            s_MessageLookup.Add(MessageFlag.VariantBundleMismatch, new Message("Variants of a given bundle must have exactly the same assets between them based on a Name.Extension (without Path) comparison. These bundle variants fail that check.", MessageType.Warning));
-            s_MessageLookup.Add(MessageFlag.ErrorInChildren, new Message("Error in child(ren)", MessageType.Error));
-            s_MessageLookup.Add(MessageFlag.SceneBundleConflict, new Message("A bundle with one or more scenes must only contain scenes.  This bundle has scenes and non-scene assets.", MessageType.Error));
-            s_MessageLookup.Add(MessageFlag.DependencySceneConflict, new Message("The folder added to this bundle has pulled in scenes and non-scene assets.  A bundle must only have one type or the other.", MessageType.Error));
+            s_MessageLookup = new Dictionary<MessageFlag, Message>
+            {
+                { MessageFlag.None, new Message(string.Empty, MessageType.None) },
+                { MessageFlag.EmptyBundle, new Message("This bundle is empty.  Empty bundles cannot get saved with the scene and will disappear from this list if Unity restarts or if various other bundle rename or move events occur.", MessageType.Info) },
+                { MessageFlag.EmptyFolder, new Message("This folder is either empty or contains only empty children.  Empty bundles cannot get saved with the scene and will disappear from this list if Unity restarts or if various other bundle rename or move events occur.", MessageType.Info) },
+                { MessageFlag.WarningInChildren, new Message("Warning in child(ren)", MessageType.Warning) },
+                { MessageFlag.AssetsDuplicatedInMultBundles, new Message("Assets being pulled into this bundle due to dependencies are also being pulled into another bundle.  This will cause duplication in memory", MessageType.Warning) },
+                { MessageFlag.VariantBundleMismatch, new Message("Variants of a given bundle must have exactly the same assets between them based on a Name.Extension (without Path) comparison. These bundle variants fail that check.", MessageType.Warning) },
+                { MessageFlag.ErrorInChildren, new Message("Error in child(ren)", MessageType.Error) },
+                { MessageFlag.SceneBundleConflict, new Message("A bundle with one or more scenes must only contain scenes.  This bundle has scenes and non-scene assets.", MessageType.Error) },
+                { MessageFlag.DependencySceneConflict, new Message("The folder added to this bundle has pulled in scenes and non-scene assets.  A bundle must only have one type or the other.", MessageType.Error) }
+            };
         }
     }
 

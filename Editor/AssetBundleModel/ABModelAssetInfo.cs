@@ -1,28 +1,29 @@
-﻿using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+
+using UnityEditor;
 using UnityEditor.IMGUI.Controls;
+
+using UnityEngine;
 
 namespace AssetBundleBrowser.AssetBundleModel
 {
     internal sealed class AssetTreeItem : TreeViewItem
     {
-        private AssetInfo m_asset;
-        internal AssetInfo asset
-        {
-            get { return m_asset; }
-        }
+        private readonly AssetInfo m_asset;
+        internal AssetInfo Asset => m_asset;
         internal AssetTreeItem() : base(-1, -1) { }
-        internal AssetTreeItem(AssetInfo a) : base(a != null ? a.fullAssetName.GetHashCode() : Random.Range(int.MinValue, int.MaxValue), 0, a != null ? a.displayName : "failed")
+        internal AssetTreeItem(AssetInfo a) : base(a != null ? a.FullAssetName.GetHashCode() : Random.Range(int.MinValue, int.MaxValue), 0, a != null ? a.DisplayName : "failed")
         {
             m_asset = a;
             if (a != null)
-                icon = AssetDatabase.GetCachedIcon(a.fullAssetName) as Texture2D;
+            {
+                icon = AssetDatabase.GetCachedIcon(a.FullAssetName) as Texture2D;
+            }
         }
 
         private Color m_color = new Color(0, 0, 0, 0);
-        internal Color itemColor
+        internal Color ItemColor
         {
             get
             {
@@ -32,7 +33,7 @@ namespace AssetBundleBrowser.AssetBundleModel
                 }
                 return m_color;
             }
-            set { m_color = value; }
+            set => m_color = value;
         }
         internal Texture2D MessageIcon()
         {
@@ -48,14 +49,18 @@ namespace AssetBundleBrowser.AssetBundleModel
         {
             bool contains = false;
             if (children == null)
+            {
                 return contains;
+            }
 
             if (asset == null)
+            {
                 return false;
+            }
+
             foreach (var child in children)
             {
-                var c = child as AssetTreeItem;
-                if (c != null && c.asset != null && c.asset.fullAssetName == asset.fullAssetName)
+                if (child is AssetTreeItem c && c.Asset != null && c.Asset.FullAssetName == asset.FullAssetName)
                 {
                     contains = true;
                     break;
@@ -70,28 +75,28 @@ namespace AssetBundleBrowser.AssetBundleModel
 
     internal class AssetInfo
     {
-        internal bool isScene { get; set; }
-        internal bool isFolder { get; set; }
+        internal bool IsScene { get; set; }
+        internal bool IsFolder { get; set; }
         internal long fileSize;
 
-        private HashSet<string> m_Parents;
+        private readonly HashSet<string> m_Parents;
         private string m_AssetName;
         private string m_DisplayName;
-        private string m_BundleName;
-        private MessageSystem.MessageState m_AssetMessages = new MessageSystem.MessageState();
+        private readonly string m_BundleName;
+        private readonly MessageSystem.MessageState m_AssetMessages = new MessageSystem.MessageState();
 
-        internal AssetInfo(string inName, string bundleName="")
+        internal AssetInfo(string inName, string bundleName = "")
         {
-            fullAssetName = inName;
+            FullAssetName = inName;
             m_BundleName = bundleName;
             m_Parents = new HashSet<string>();
-            isScene = false;
-            isFolder = false;
+            IsScene = false;
+            IsFolder = false;
         }
 
-        internal string fullAssetName
+        internal string FullAssetName
         {
-            get { return m_AssetName; }
+            get => m_AssetName;
             set
             {
                 m_AssetName = value;
@@ -99,25 +104,15 @@ namespace AssetBundleBrowser.AssetBundleModel
 
                 //TODO - maybe there's a way to ask the AssetDatabase for this size info.
                 System.IO.FileInfo fileInfo = new System.IO.FileInfo(m_AssetName);
-                if (fileInfo.Exists)
-                    fileSize = fileInfo.Length;
-                else
-                    fileSize = 0;
+                fileSize = fileInfo.Exists ? fileInfo.Length : 0;
             }
         }
-        internal string displayName
-        {
-            get { return m_DisplayName; }
-        }
-        internal string bundleName
-        { get { return System.String.IsNullOrEmpty(m_BundleName) ? "auto" : m_BundleName; } }
-        
+        internal string DisplayName => m_DisplayName;
+        internal string BundleName => string.IsNullOrEmpty(m_BundleName) ? "auto" : m_BundleName;
+
         internal Color GetColor()
         {
-            if (System.String.IsNullOrEmpty(m_BundleName))
-                return Model.k_LightGrey;
-            else
-                return Color.white;
+            return System.String.IsNullOrEmpty(m_BundleName) ? Model.k_LightGrey : Color.white;
         }
 
         internal bool IsMessageSet(MessageSystem.MessageFlag flag)
@@ -135,85 +130,88 @@ namespace AssetBundleBrowser.AssetBundleModel
         internal IEnumerable<MessageSystem.Message> GetMessages()
         {
             List<MessageSystem.Message> messages = new List<MessageSystem.Message>();
-            if(IsMessageSet(MessageSystem.MessageFlag.SceneBundleConflict))
+            if (IsMessageSet(MessageSystem.MessageFlag.SceneBundleConflict))
             {
-                var message = displayName + "\n";
-                if (isScene)
+                var message = DisplayName + "\n";
+                if (IsScene)
+                {
                     message += "Is a scene that is in a bundle with non-scene assets. Scene bundles must have only one or more scene assets.";
+                }
                 else
+                {
                     message += "Is included in a bundle with a scene. Scene bundles must have only one or more scene assets.";
+                }
+
                 messages.Add(new MessageSystem.Message(message, MessageType.Error));
             }
-            if(IsMessageSet(MessageSystem.MessageFlag.DependencySceneConflict))
+            if (IsMessageSet(MessageSystem.MessageFlag.DependencySceneConflict))
             {
-                var message = displayName + "\n";
+                var message = DisplayName + "\n";
                 message += MessageSystem.GetMessage(MessageSystem.MessageFlag.DependencySceneConflict).message;
                 messages.Add(new MessageSystem.Message(message, MessageType.Error));
             }
             if (IsMessageSet(MessageSystem.MessageFlag.AssetsDuplicatedInMultBundles))
             {
                 var bundleNames = AssetBundleModel.Model.CheckDependencyTracker(this);
-                string message = displayName + "\n" + "Is auto-included in multiple bundles:\n";
-                foreach(var bundleName in bundleNames)
+                string message = DisplayName + "\n" + "Is auto-included in multiple bundles:\n";
+                foreach (var bundleName in bundleNames)
                 {
                     message += bundleName + ", ";
                 }
-                message = message.Substring(0, message.Length - 2);//remove trailing comma.
+                message = message[..^2];//remove trailing comma.
                 messages.Add(new MessageSystem.Message(message, MessageType.Warning));
             }
 
             if (System.String.IsNullOrEmpty(m_BundleName) && m_Parents.Count > 0)
             {
                 //TODO - refine the parent list to only include those in the current asset list
-                var message = displayName + "\n" + "Is auto included in bundle(s) due to parent(s): \n";
+                var message = DisplayName + "\n" + "Is auto included in bundle(s) due to parent(s): \n";
                 foreach (var parent in m_Parents)
                 {
                     message += parent + ", ";
                 }
-                message = message.Substring(0, message.Length - 2);//remove trailing comma.
+                message = message[..^2];//remove trailing comma.
                 messages.Add(new MessageSystem.Message(message, MessageType.Info));
-            }            
+            }
 
             if (m_dependencies != null && m_dependencies.Count > 0)
             {
                 var message = string.Empty;
-                var sortedDependencies = m_dependencies.OrderBy(d => d.bundleName);
+                var sortedDependencies = m_dependencies.OrderBy(d => d.BundleName);
                 foreach (var dependent in sortedDependencies)
                 {
-                    if (dependent.bundleName != bundleName)
+                    if (dependent.BundleName != BundleName)
                     {
-                        message += dependent.bundleName + " : " + dependent.displayName + "\n";
+                        message += dependent.BundleName + " : " + dependent.DisplayName + "\n";
                     }
                 }
                 if (string.IsNullOrEmpty(message) == false)
                 {
-                    message = message.Insert(0, displayName + "\n" + "Is dependent on other bundle's asset(s) or auto included asset(s): \n");
-                    message = message.Substring(0, message.Length - 1);//remove trailing line break.
+                    message = message.Insert(0, DisplayName + "\n" + "Is dependent on other bundle's asset(s) or auto included asset(s): \n");
+                    message = message[..^1];//remove trailing line break.
                     messages.Add(new MessageSystem.Message(message, MessageType.Info));
                 }
-            }            
+            }
 
-            messages.Add(new MessageSystem.Message(displayName + "\n" + "Path: " + fullAssetName, MessageType.Info));
+            messages.Add(new MessageSystem.Message(DisplayName + "\n" + "Path: " + FullAssetName, MessageType.Info));
 
             return messages;
         }
         internal void AddParent(string name)
         {
-            m_Parents.Add(name);
+            _ = m_Parents.Add(name);
         }
         internal void RemoveParent(string name)
         {
-            m_Parents.Remove(name);
+            _ = m_Parents.Remove(name);
         }
 
         internal string GetSizeString()
         {
-            if (fileSize == 0)
-                return "--";
-            return EditorUtility.FormatBytes(fileSize);
+            return fileSize == 0 ? "--" : EditorUtility.FormatBytes(fileSize);
         }
 
-        List<AssetInfo> m_dependencies = null;
+        private List<AssetInfo> m_dependencies = null;
         internal List<AssetInfo> GetDependencies()
         {
             //TODO - not sure this refreshes enough. need to build tests around that.
@@ -233,7 +231,9 @@ namespace AssetBundleBrowser.AssetBundleModel
                         {
                             var asset = Model.CreateAsset(dep, this);
                             if (asset != null)
+                            {
                                 m_dependencies.Add(asset);
+                            }
                         }
                     }
                 }

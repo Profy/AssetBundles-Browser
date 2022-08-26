@@ -1,22 +1,22 @@
-﻿using System;
-using System.CodeDom;
-using UnityEngine;
-using UnityEditor;
-using UnityEngine.TestTools;
+﻿using AssetBundleBrowser.AssetBundleModel;
+
+using Assets.AssetBundles_Browser.Editor.Tests.Util;
+using Assets.Editor.Tests.Util;
+
 using NUnit.Framework;
-using System.Collections;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Assets.AssetBundles_Browser.Editor.Tests.Util;
-using Assets.Editor.Tests.Util;
-using Boo.Lang.Runtime;
-using AssetBundleBrowser.AssetBundleModel;
-using UnityEngine.SceneManagement;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace AssetBundleBrowserTests
 {
-    class ABModelTests
+    internal class ABModelTests
     {
         private List<BundleInfo> m_BundleInfo;
 
@@ -26,17 +26,18 @@ namespace AssetBundleBrowserTests
             AssetDatabase.RemoveUnusedAssetBundleNames();
             Model.Rebuild();
 
-            m_BundleInfo = new List<BundleInfo>();
-            m_BundleInfo.Add(new BundleDataInfo("1bundle1", null));
-            m_BundleInfo.Add(new BundleDataInfo("2bundle2", null));
-            m_BundleInfo.Add(new BundleDataInfo("3bundle3", null));
+            m_BundleInfo = new List<BundleInfo>
+            {
+                new BundleDataInfo("1bundle1", null),
+                new BundleDataInfo("2bundle2", null),
+                new BundleDataInfo("3bundle3", null)
+            };
         }
 
         [TearDown]
         public static void TearDown()
         {
-            GameObject[] gameObjectsInScene = GameObject.FindObjectsOfType<GameObject>()
-                .Where(go => go.tag != "MainCamera").ToArray();
+            GameObject[] gameObjectsInScene = GameObject.FindObjectsOfType<GameObject>().Where(go => !go.CompareTag("MainCamera")).ToArray();
 
             foreach (GameObject obj in gameObjectsInScene)
             {
@@ -115,11 +116,11 @@ namespace AssetBundleBrowserTests
 
             TestUtil.ExecuteCodeAndCleanupAssets(() =>
             {
-            //Act: Operates on the list of asset bundle names found in the AssetDatabase
-            string[] list = Model.ValidateBundleList();
+                //Act: Operates on the list of asset bundle names found in the AssetDatabase
+                string[] list = Model.ValidateBundleList();
 
-            //Assert
-            Assert.AreEqual(numBundles + 1, list.Length);
+                //Assert
+                Assert.AreEqual(numBundles + 1, list.Length);
                 Assert.IsTrue(list.Contains(bundleName));
             }, listOfPrefabs);
         }
@@ -139,11 +140,11 @@ namespace AssetBundleBrowserTests
 
             TestUtil.ExecuteCodeAndCleanupAssets(() =>
             {
-            //Act: Operates on the list of asset bundle names found in the AssetDatabase
-            string[] list = Model.ValidateBundleList();
+                //Act: Operates on the list of asset bundle names found in the AssetDatabase
+                string[] list = Model.ValidateBundleList();
 
-            //Assert
-            Assert.AreEqual(numBundles + 2, list.Length);
+                //Assert
+                Assert.AreEqual(numBundles + 2, list.Length);
                 Assert.IsTrue(list.Contains(bundleName + ".v1"));
                 Assert.IsTrue(list.Contains(bundleName + ".v2"));
             }, listOfPrefabs);
@@ -168,8 +169,8 @@ namespace AssetBundleBrowserTests
 
                 var rootChildList = ABModelUtil.Root.GetChildList();
 
-            //Checks that the root has 1 bundle variant folder object as a child
-            Assert.AreEqual(numChildren + 1, rootChildList.Count);
+                //Checks that the root has 1 bundle variant folder object as a child
+                Assert.AreEqual(numChildren + 1, rootChildList.Count);
 
                 Type variantFolderType = typeof(BundleVariantFolderInfo);
                 BundleVariantFolderInfo foundItem = null;
@@ -182,8 +183,8 @@ namespace AssetBundleBrowserTests
                     }
                 }
 
-            //Checks that the bundle variant folder object (mentioned above) has two children
-            Assert.IsNotNull(foundItem);
+                //Checks that the bundle variant folder object (mentioned above) has two children
+                Assert.IsNotNull(foundItem);
                 Assert.AreEqual(2, foundItem.GetChildList().Count);
 
             }, listOfPrefabs);
@@ -237,7 +238,7 @@ namespace AssetBundleBrowserTests
             int numChildren = GetBundleRootFolderChildCount();
 
             string bundleName = "testname";
-            Model.CreateEmptyBundle(null, bundleName);
+            _ = Model.CreateEmptyBundle(null, bundleName);
 
             Assert.AreEqual(numChildren + 1, GetBundleRootFolderChildCount());
         }
@@ -250,7 +251,7 @@ namespace AssetBundleBrowserTests
 
             //Arrange
             string bundleName = "testname";
-            Model.CreateEmptyBundle(null, bundleName);
+            _ = Model.CreateEmptyBundle(null, bundleName);
 
             //Act
             Model.Refresh();
@@ -266,7 +267,7 @@ namespace AssetBundleBrowserTests
             int childCount = GetBundleRootFolderChildCount();
 
             string bundleName = "testname";
-            Model.CreateEmptyBundle(null, bundleName);
+            _ = Model.CreateEmptyBundle(null, bundleName);
 
             Model.Rebuild();
 
@@ -346,8 +347,8 @@ namespace AssetBundleBrowserTests
             string bunleName = "bundle1";
 
             AssetInfo info = Model.CreateAsset(assetName, bunleName);
-            Assert.AreEqual(assetName, info.fullAssetName);
-            Assert.AreEqual(bunleName, info.bundleName);
+            Assert.AreEqual(assetName, info.FullAssetName);
+            Assert.AreEqual(bunleName, info.BundleName);
         }
 
         [Test]
@@ -362,7 +363,7 @@ namespace AssetBundleBrowserTests
             bool handleBundle = Model.HandleBundleRename(treeItem, newBundleDataInfoName);
 
             Assert.IsTrue(handleBundle);
-            Assert.AreEqual(treeItem.bundle.m_Name.bundleName, newBundleDataInfoName);
+            Assert.AreEqual(treeItem.Bundle.m_Name.BundleName, newBundleDataInfoName);
         }
 
         [Test]
@@ -380,7 +381,7 @@ namespace AssetBundleBrowserTests
                 BundleInfo b = new BundleDataInfo(bundle1Name, ABModelUtil.Root);
                 BundleTreeItem treeItem = new BundleTreeItem(b, 0, ABModelUtil.FakeTexture2D);
 
-                Model.HandleBundleRename(treeItem, bundle2Name);
+                _ = Model.HandleBundleRename(treeItem, bundle2Name);
 
                 Assert.AreEqual(bundle2Name, AssetImporter.GetAtPath(listOfPrefabs[0]).assetBundleName);
 
@@ -407,9 +408,9 @@ namespace AssetBundleBrowserTests
                 BundleTreeItem treeItem = new BundleTreeItem(b, 0, ABModelUtil.FakeTexture2D);
                 Model.ExecuteAssetMove();
 
-                Assert.AreEqual(bundle1Name, ABModelUtil.Root.GetChildList().ElementAt(numExistingChildren).m_Name.bundleName);
-                Model.HandleBundleRename(treeItem, bundle2Name);
-                Assert.AreEqual(bundle2Name, ABModelUtil.Root.GetChildList().ElementAt(numExistingChildren).m_Name.bundleName);
+                Assert.AreEqual(bundle1Name, ABModelUtil.Root.GetChildList().ElementAt(numExistingChildren).m_Name.BundleName);
+                _ = Model.HandleBundleRename(treeItem, bundle2Name);
+                Assert.AreEqual(bundle2Name, ABModelUtil.Root.GetChildList().ElementAt(numExistingChildren).m_Name.BundleName);
 
             }, listOfPrefabs);
         }
@@ -422,8 +423,8 @@ namespace AssetBundleBrowserTests
 
             BundleInfo b = new BundleDataInfo(bundle1Name, ABModelUtil.Root);
             BundleTreeItem treeItem = new BundleTreeItem(b, 0, ABModelUtil.FakeTexture2D);
-            Model.HandleBundleRename(treeItem, bundle2Name);
-            Assert.AreEqual(bundle2Name, treeItem.bundle.m_Name.bundleName);
+            _ = Model.HandleBundleRename(treeItem, bundle2Name);
+            Assert.AreEqual(bundle2Name, treeItem.Bundle.m_Name.BundleName);
         }
 
         [Test]
@@ -437,7 +438,7 @@ namespace AssetBundleBrowserTests
 
             Model.HandleBundleReparent(new BundleInfo[] { dataInfo }, concreteFolder);
 
-            Assert.AreEqual(dataInfo.parent.m_Name.bundleName, concreteFolder.m_Name.bundleName);
+            Assert.AreEqual(dataInfo.Parent.m_Name.BundleName, concreteFolder.m_Name.BundleName);
         }
 
         [Test]
@@ -451,9 +452,9 @@ namespace AssetBundleBrowserTests
             concreteFolder.AddChild(subConcreteFolder);
             subConcreteFolder.AddChild(subConcreteFolder);
 
-            Model.HandleBundleReparent(new BundleInfo[] { folderToBeMoved }, concreteFolder);  
+            Model.HandleBundleReparent(new BundleInfo[] { folderToBeMoved }, concreteFolder);
 
-            Assert.AreEqual(concreteFolder.m_Name.bundleName, folderToBeMoved.parent.m_Name.bundleName);
+            Assert.AreEqual(concreteFolder.m_Name.BundleName, folderToBeMoved.Parent.m_Name.BundleName);
         }
 
         [Test]
@@ -466,7 +467,7 @@ namespace AssetBundleBrowserTests
             BundleVariantDataInfo bundleVariantDataInfo = new BundleVariantDataInfo("v1", startParent);
 
             Model.HandleBundleReparent(new BundleInfo[] { bundleVariantDataInfo }, concreteFolder);
-            Assert.AreEqual(concreteFolder, bundleVariantDataInfo.parent);
+            Assert.AreEqual(concreteFolder, bundleVariantDataInfo.Parent);
         }
 
         [Test]
@@ -478,8 +479,8 @@ namespace AssetBundleBrowserTests
 
             Model.HandleBundleReparent(new BundleInfo[] { bundleVariantFolder }, concreteFolder);
 
-            Assert.AreNotEqual(String.Empty, bundleVariantFolder.parent.m_Name.bundleName);
-            Assert.AreEqual(concreteFolder, bundleVariantFolder.parent);
+            Assert.AreNotEqual(String.Empty, bundleVariantFolder.Parent.m_Name.BundleName);
+            Assert.AreEqual(concreteFolder, bundleVariantFolder.Parent);
         }
 
         [Test]
@@ -496,7 +497,7 @@ namespace AssetBundleBrowserTests
 
             Model.HandleBundleReparent(new BundleInfo[] { bundleDataInfo }, bundleVariantFolderRoot);
 
-            Assert.AreEqual(variantFolderName + "/" + bundleName, bundleDataInfo.m_Name.bundleName);
+            Assert.AreEqual(variantFolderName + "/" + bundleName, bundleDataInfo.m_Name.BundleName);
         }
 
         [Test]
@@ -583,19 +584,18 @@ namespace AssetBundleBrowserTests
         {
             // Account for existing asset bundles
             int numChildren = ABModelUtil.Root.GetChildList().Count;
-            int numBundles = AssetDatabase.GetAllAssetBundleNames().Length;
 
             BundleVariantFolderInfo bundleVariantFolderRoot = new BundleVariantFolderInfo("variantFolder", ABModelUtil.Root);
             ABModelUtil.Root.AddChild(bundleVariantFolderRoot);
 
             BundleVariantDataInfo bundleVariantDataInfo1 = new BundleVariantDataInfo("variant1", bundleVariantFolderRoot);
-            bundleVariantDataInfo1.m_Name.variant = "a";
+            bundleVariantDataInfo1.m_Name.Variant = "a";
 
             BundleVariantDataInfo bundleVariantDataInfo2 = new BundleVariantDataInfo("variant1", bundleVariantFolderRoot);
-            bundleVariantDataInfo2.m_Name.variant = "b";
+            bundleVariantDataInfo2.m_Name.Variant = "b";
 
             BundleVariantDataInfo bundleVariantDataInfo3 = new BundleVariantDataInfo("variant1", bundleVariantFolderRoot);
-            bundleVariantDataInfo3.m_Name.variant = "c";
+            bundleVariantDataInfo3.m_Name.Variant = "c";
 
             bundleVariantFolderRoot.AddChild(bundleVariantDataInfo1);
             bundleVariantFolderRoot.AddChild(bundleVariantDataInfo2);
@@ -631,15 +631,17 @@ namespace AssetBundleBrowserTests
             string bundle2Name = "bundle2";
 
             BundleDataInfo bundle1DataInfo = Model.CreateEmptyBundle() as BundleDataInfo;
-            Model.HandleBundleRename(new BundleTreeItem(bundle1DataInfo, 0, ABModelUtil.FakeTexture2D), bundle1Name);
+            _ = Model.HandleBundleRename(new BundleTreeItem(bundle1DataInfo, 0, ABModelUtil.FakeTexture2D), bundle1Name);
 
             BundleDataInfo bundle2DataInfo = Model.CreateEmptyBundle() as BundleDataInfo;
-            Model.HandleBundleRename(new BundleTreeItem(bundle2DataInfo, 0, ABModelUtil.FakeTexture2D), bundle2Name);
+            _ = Model.HandleBundleRename(new BundleTreeItem(bundle2DataInfo, 0, ABModelUtil.FakeTexture2D), bundle2Name);
 
-            List<string> listOfPrefabs = new List<string>();
-            listOfPrefabs.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle1Name, String.Empty));
-            listOfPrefabs.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty));
-            listOfPrefabs.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty));
+            List<string> listOfPrefabs = new List<string>
+            {
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle1Name, String.Empty),
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty),
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty)
+            };
 
             TestUtil.ExecuteCodeAndCleanupAssets(() =>
             {
@@ -649,8 +651,8 @@ namespace AssetBundleBrowserTests
                 Assert.AreEqual(numBundles + 1, bundleNames.Length);
                 Assert.IsTrue(bundleNames.Contains(bundle1Name));
 
-            //Make sure every asset now has bundle1 as the bundle name
-            foreach (string prefab in listOfPrefabs)
+                //Make sure every asset now has bundle1 as the bundle name
+                foreach (string prefab in listOfPrefabs)
                 {
                     Assert.AreEqual(bundle1Name, AssetImporter.GetAtPath(prefab).assetBundleName);
                 }
@@ -673,10 +675,12 @@ namespace AssetBundleBrowserTests
             BundleDataInfo bundle2DataInfo = new BundleDataInfo(bundle2Name, concrete);
             concrete.AddChild(bundle2DataInfo);
 
-            List<string> listOfPrefabs = new List<string>();
-            listOfPrefabs.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle1Name, String.Empty));
-            listOfPrefabs.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty));
-            listOfPrefabs.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty));
+            List<string> listOfPrefabs = new List<string>
+            {
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle1Name, String.Empty),
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty),
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, String.Empty)
+            };
 
             TestUtil.ExecuteCodeAndCleanupAssets(() =>
             {
@@ -686,8 +690,8 @@ namespace AssetBundleBrowserTests
                 Assert.AreEqual(numBundles + 1, bundleNames.Length, GetAllElementsAsString(bundleNames));
                 Assert.IsTrue(bundleNames.Contains(bundle2Name));
 
-            //Make sure every asset now has bundle1 as the bundle name
-            foreach (string prefab in listOfPrefabs)
+                //Make sure every asset now has bundle1 as the bundle name
+                foreach (string prefab in listOfPrefabs)
                 {
                     Assert.AreEqual(bundle2Name, AssetImporter.GetAtPath(prefab).assetBundleName);
                 }
@@ -712,9 +716,11 @@ namespace AssetBundleBrowserTests
             string bundle1Name = "bundle1";
             string bundle2Name = "bundle2";
 
-            List<string> listOfAssets = new List<string>();
-            listOfAssets.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle1Name, "", bundle1PrefabInstanceName));
-            listOfAssets.Add(TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, "", bundle2PrefabInstanceName));
+            List<string> listOfAssets = new List<string>
+            {
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle1Name, "", bundle1PrefabInstanceName),
+                TestUtil.CreatePrefabWithBundleAndVariantName(bundle2Name, "", bundle2PrefabInstanceName)
+            };
 
             BundleDataInfo bundle1DataInfo = new BundleDataInfo(bundle1Name, ABModelUtil.Root);
             BundleDataInfo bundle2DataInfo = new BundleDataInfo(bundle2Name, ABModelUtil.Root);
@@ -737,31 +743,31 @@ namespace AssetBundleBrowserTests
             TestUtil.ExecuteCodeAndCleanupAssets(() =>
             {
                 AddMaterialsToMultipleObjects(new string[] { bundle1PrefabInstanceName, bundle2PrefabInstanceName }, listOfAssets, mat);
-                Model.HandleDedupeBundles(new BundleInfo[] { bundle1DataInfo, bundle2DataInfo }, false);
-            //This checks to make sure that a newbundle was automatically created since we dont' set this up anywhere else.
-            Assert.IsTrue(AssetDatabase.GetAllAssetBundleNames().Contains("newbundle"));
+                _ = Model.HandleDedupeBundles(new BundleInfo[] { bundle1DataInfo, bundle2DataInfo }, false);
+                //This checks to make sure that a newbundle was automatically created since we dont' set this up anywhere else.
+                Assert.IsTrue(AssetDatabase.GetAllAssetBundleNames().Contains("newbundle"));
 
             }, listOfAssets);
         }
 
-        static int GetBundleRootFolderChildCount()
+        private static int GetBundleRootFolderChildCount()
         {
             Dictionary<string, BundleInfo>.ValueCollection childList = ABModelUtil.Root.GetChildList();
             return childList.Count;
         }
 
-        static void AddMaterialsToMultipleObjects(IEnumerable<string> parentNames, IEnumerable<string> paths, Material mat)
+        private static void AddMaterialsToMultipleObjects(IEnumerable<string> parentNames, IEnumerable<string> paths, Material mat)
         {
             for (int i = 0; i < parentNames.Count(); i++)
             {
                 GameObject p = GameObject.Find(parentNames.ElementAt(i));
                 p.GetComponent<Renderer>().material = mat;
 
-                PrefabUtility.ReplacePrefab(p, AssetDatabase.LoadMainAssetAtPath(paths.ElementAt(i)));
+                _ = PrefabUtility.SaveAsPrefabAsset(p, paths.ElementAt(i));
             }
         }
 
-        static string GetAllElementsAsString(IEnumerable<string> list)
+        private static string GetAllElementsAsString(IEnumerable<string> list)
         {
             string returnString = String.Empty;
             foreach (string i in list)

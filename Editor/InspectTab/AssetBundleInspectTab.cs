@@ -1,35 +1,37 @@
-using UnityEditor;
-using UnityEngine;
-using UnityEditor.IMGUI.Controls;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
+
+using UnityEditor;
+using UnityEditor.IMGUI.Controls;
+
+using UnityEngine;
 
 namespace AssetBundleBrowser
 {
     [System.Serializable]
     internal class AssetBundleInspectTab
     {
-        Rect m_Position;
+        private Rect m_Position;
 
         [SerializeField]
         private InspectTabData m_Data;
-        
 
-        private Dictionary<string, List<string> > m_BundleList;
+
+        private Dictionary<string, List<string>> m_BundleList;
         private InspectBundleTree m_BundleTreeView;
         [SerializeField]
         private TreeViewState m_BundleTreeState;
 
         internal Editor m_Editor = null;
 
-        private SingleBundleInspector m_SingleInspector;
+        private readonly SingleBundleInspector m_SingleInspector;
 
         /// <summary>
         /// Collection of loaded asset bundle records indexed by bundle name
         /// </summary>
-        private Dictionary<string, AssetBundleRecord> m_loadedAssetBundles;
+        private readonly Dictionary<string, AssetBundleRecord> m_loadedAssetBundles;
 
         /// <summary>
         /// Returns the record for a loaded asset bundle by name if it exists in our container.
@@ -38,17 +40,9 @@ namespace AssetBundleBrowser
         /// <param name="bundleName">Name of the loaded asset bundle, excluding the variant extension</param>
         private AssetBundleRecord GetLoadedBundleRecordByName(string bundleName)
         {
-            if (string.IsNullOrEmpty(bundleName))
-            {
-                return null;
-            }
-
-            if (!m_loadedAssetBundles.ContainsKey(bundleName))
-            {
-                return null;
-            }
-
-            return m_loadedAssetBundles[bundleName];
+            return string.IsNullOrEmpty(bundleName)
+                ? null
+                : !m_loadedAssetBundles.ContainsKey(bundleName) ? null : m_loadedAssetBundles[bundleName];
         }
 
         internal AssetBundleInspectTab()
@@ -61,8 +55,7 @@ namespace AssetBundleBrowser
         internal void OnEnable(Rect pos)
         {
             m_Position = pos;
-            if (m_Data == null)
-                m_Data = new InspectTabData();
+            m_Data ??= new InspectTabData();
 
             //LoadData...
             var dataPath = System.IO.Path.GetFullPath(".");
@@ -73,20 +66,18 @@ namespace AssetBundleBrowser
             {
                 BinaryFormatter bf = new BinaryFormatter();
                 FileStream file = File.Open(dataPath, FileMode.Open);
-                var data = bf.Deserialize(file) as InspectTabData;
-                if (data != null)
+                if (bf.Deserialize(file) is InspectTabData data)
+                {
                     m_Data = data;
+                }
+
                 file.Close();
             }
 
 
-            if (m_BundleList == null)
-                m_BundleList = new Dictionary<string, List<string>>();
-
-            if (m_BundleTreeState == null)
-                m_BundleTreeState = new TreeViewState();
+            m_BundleList ??= new Dictionary<string, List<string>>();
+            m_BundleTreeState ??= new TreeViewState();
             m_BundleTreeView = new InspectBundleTree(m_BundleTreeState, this);
-
 
             RefreshBundles();
         }
@@ -112,9 +103,11 @@ namespace AssetBundleBrowser
 
             if (Application.isPlaying)
             {
-                var style = new GUIStyle(GUI.skin.label);
-                style.alignment = TextAnchor.MiddleCenter;
-                style.wordWrap = true;
+                var style = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    wordWrap = true
+                };
                 GUI.Label(
                     new Rect(m_Position.x + 1f, m_Position.y + 1f, m_Position.width - 2f, m_Position.height - 2f),
                     new GUIContent("Inspector unavailable while in PLAY mode"),
@@ -158,10 +151,9 @@ namespace AssetBundleBrowser
         }
         internal void RemoveBundleFolder(string pathToRemove)
         {
-            List<string> paths = null;
-            if(m_BundleList.TryGetValue(pathToRemove, out paths))
+            if (m_BundleList.TryGetValue(pathToRemove, out List<string> paths))
             {
-                foreach(var p in paths)
+                foreach (var p in paths)
                 {
                     UnloadBundle(p);
                 }
@@ -177,7 +169,9 @@ namespace AssetBundleBrowser
                 var gamePath = System.IO.Path.GetFullPath(".");//TODO - FileUtil.GetProjectRelativePath??
                 gamePath = gamePath.Replace("\\", "/");
                 if (newPath.StartsWith(gamePath))
+                {
                     newPath = newPath.Remove(0, gamePath.Length + 1);
+                }
 
                 m_Data.AddPath(newPath);
 
@@ -186,15 +180,17 @@ namespace AssetBundleBrowser
         }
 
         //TODO - this is largely copied from BuildTab, should maybe be shared code.
-        private void BrowseForFolder(string folderPath = null)
+        private void BrowseForFolder()
         {
-           folderPath = EditorUtility.OpenFolderPanel("Bundle Folder", string.Empty, string.Empty);
+            string folderPath = EditorUtility.OpenFolderPanel("Bundle Folder", string.Empty, string.Empty);
             if (!string.IsNullOrEmpty(folderPath))
             {
                 var gamePath = System.IO.Path.GetFullPath(".");//TODO - FileUtil.GetProjectRelativePath??
                 gamePath = gamePath.Replace("\\", "/");
                 if (folderPath.Length > gamePath.Length && folderPath.StartsWith(gamePath))
+                {
                     folderPath = folderPath.Remove(0, gamePath.Length + 1);
+                }
 
                 AddBundleFolder(folderPath);
 
@@ -216,7 +212,7 @@ namespace AssetBundleBrowser
                 List<AssetBundleRecord> records = new List<AssetBundleRecord>(m_loadedAssetBundles.Values);
                 foreach (AssetBundleRecord record in records)
                 {
-                    record.bundle.Unload(true);
+                    record.Bundle.Unload(true);
                 }
 
                 m_loadedAssetBundles.Clear();
@@ -229,17 +225,18 @@ namespace AssetBundleBrowser
 
 
             if (m_Data.BundlePaths == null)
+            {
                 return;
+            }
 
             //find assets
-            if (m_BundleList == null)
-                m_BundleList = new Dictionary<string, List<string>>();
+            m_BundleList ??= new Dictionary<string, List<string>>();
 
             m_BundleList.Clear();
             var pathsToRemove = new List<string>();
-            foreach(var filePath in m_Data.BundlePaths)
+            foreach (var filePath in m_Data.BundlePaths)
             {
-                if(File.Exists(filePath))
+                if (File.Exists(filePath))
                 {
                     AddBundleToList(string.Empty, filePath);
                 }
@@ -249,15 +246,15 @@ namespace AssetBundleBrowser
                     pathsToRemove.Add(filePath);
                 }
             }
-            foreach(var path in pathsToRemove)
+            foreach (var path in pathsToRemove)
             {
                 m_Data.RemovePath(path);
             }
             pathsToRemove.Clear();
 
-            foreach(var folder in m_Data.BundleFolders)
+            foreach (var folder in m_Data.BundleFolders)
             {
-                if(Directory.Exists(folder.path))
+                if (Directory.Exists(folder.path))
                 {
                     AddFilePathToList(folder.path, folder.path);
                 }
@@ -277,10 +274,9 @@ namespace AssetBundleBrowser
 
         private void AddBundleToList(string parent, string bundlePath)
         {
-            List<string> bundles = null;
-            m_BundleList.TryGetValue(parent, out bundles);
+            _ = m_BundleList.TryGetValue(parent, out List<string> bundles);
 
-            if(bundles == null)
+            if (bundles == null)
             {
                 bundles = new List<string>();
                 m_BundleList.Add(parent, bundles);
@@ -293,7 +289,7 @@ namespace AssetBundleBrowser
             foreach (var file in Directory.GetFiles(path))
             {
                 var ext = Path.GetExtension(file);
-                if(!notAllowedExtensions.Contains(ext))
+                if (!notAllowedExtensions.Contains(ext))
                 {
                     var f = file.Replace('\\', '/');
                     if (File.Exists(file) && !m_Data.FolderIgnoresFile(rootPath, f))
@@ -309,8 +305,7 @@ namespace AssetBundleBrowser
             }
         }
 
-        internal Dictionary<string, List<string>> BundleList
-        { get { return m_BundleList; } }
+        internal Dictionary<string, List<string>> BundleList => m_BundleList;
 
 
         internal void SetBundleItem(IList<InspectTreeItem> selected)
@@ -320,10 +315,10 @@ namespace AssetBundleBrowser
             {
                 m_SingleInspector.SetBundle(null);
             }
-            else if(selected.Count == 1)
+            else if (selected.Count == 1)
             {
-                AssetBundle bundle = LoadBundle(selected[0].bundlePath);
-                m_SingleInspector.SetBundle(bundle, selected[0].bundlePath, m_Data, this);
+                AssetBundle bundle = LoadBundle(selected[0].BundlePath);
+                m_SingleInspector.SetBundle(bundle, selected[0].BundlePath, m_Data, this);
             }
             else
             {
@@ -348,21 +343,21 @@ namespace AssetBundleBrowser
             [SerializeField]
             private List<BundleFolderData> m_BundleFolders = new List<BundleFolderData>();
 
-            internal IList<string> BundlePaths { get { return m_BundlePaths.AsReadOnly(); } }
-            internal IList<BundleFolderData> BundleFolders { get { return m_BundleFolders.AsReadOnly(); } }
+            internal IList<string> BundlePaths => m_BundlePaths.AsReadOnly();
+            internal IList<BundleFolderData> BundleFolders => m_BundleFolders.AsReadOnly();
 
             internal void AddPath(string newPath)
             {
                 if (!m_BundlePaths.Contains(newPath))
                 {
                     var possibleFolderData = FolderDataContainingFilePath(newPath);
-                    if(possibleFolderData == null)
+                    if (possibleFolderData == null)
                     {
                         m_BundlePaths.Add(newPath);
                     }
                     else
                     {
-                        possibleFolderData.ignoredFiles.Remove(newPath);
+                        _ = possibleFolderData.IgnoredFiles.Remove(newPath);
                     }
                 }
             }
@@ -370,25 +365,30 @@ namespace AssetBundleBrowser
             internal void AddFolder(string newPath)
             {
                 if (!BundleFolderContains(newPath))
+                {
                     m_BundleFolders.Add(new BundleFolderData(newPath));
+                }
             }
 
             internal void RemovePath(string pathToRemove)
             {
-                m_BundlePaths.Remove(pathToRemove);
+                _ = m_BundlePaths.Remove(pathToRemove);
             }
 
             internal void RemoveFolder(string pathToRemove)
             {
-                m_BundleFolders.Remove(BundleFolders.FirstOrDefault(bfd => bfd.path == pathToRemove));
+                _ = m_BundleFolders.Remove(BundleFolders.FirstOrDefault(bfd => bfd.path == pathToRemove));
             }
 
             internal bool FolderIgnoresFile(string folderPath, string filePath)
             {
                 if (BundleFolders == null)
+                {
                     return false;
+                }
+
                 var bundleFolderData = BundleFolders.FirstOrDefault(bfd => bfd.path == folderPath);
-                return bundleFolderData != null && bundleFolderData.ignoredFiles.Contains(filePath);
+                return bundleFolderData != null && bundleFolderData.IgnoredFiles.Contains(filePath);
             }
 
             internal BundleFolderData FolderDataContainingFilePath(string filePath)
@@ -405,9 +405,9 @@ namespace AssetBundleBrowser
 
             private bool BundleFolderContains(string folderPath)
             {
-                foreach(var bundleFolderData in BundleFolders)
+                foreach (var bundleFolderData in BundleFolders)
                 {
-                    if(Path.GetFullPath(bundleFolderData.path) == Path.GetFullPath(folderPath))
+                    if (Path.GetFullPath(bundleFolderData.path) == Path.GetFullPath(folderPath))
                     {
                         return true;
                     }
@@ -418,17 +418,13 @@ namespace AssetBundleBrowser
             [System.Serializable]
             internal class BundleFolderData
             {
-                [SerializeField]
-                internal string path;
-
-                [SerializeField]
-                private List<string> m_ignoredFiles;
-                internal List<string> ignoredFiles
+                [SerializeField] internal string path;
+                [SerializeField] private List<string> m_ignoredFiles;
+                internal List<string> IgnoredFiles
                 {
                     get
                     {
-                        if (m_ignoredFiles == null)
-                            m_ignoredFiles = new List<string>();
+                        m_ignoredFiles ??= new List<string>();
                         return m_ignoredFiles;
                     }
                 }
@@ -455,7 +451,7 @@ namespace AssetBundleBrowser
 
             string extension = Path.GetExtension(path);
 
-            string bundleName = path.Substring(0, path.Length - extension.Length);
+            string bundleName = path[..^extension.Length];
 
             // Check if we have a record for this bundle
             AssetBundleRecord record = GetLoadedBundleRecordByName(bundleName);
@@ -463,16 +459,16 @@ namespace AssetBundleBrowser
             if (null != record)
             {
                 // Unload existing bundle if variant names differ, otherwise use existing bundle
-                if (!record.path.Equals(path))
+                if (!record.Path.Equals(path))
                 {
                     UnloadBundle(bundleName);
                 }
                 else
                 {
-                    bundle = record.bundle;
+                    bundle = record.Bundle;
                 }
             }
-                
+
             if (null == bundle)
             {
                 // Load the bundle
@@ -488,7 +484,7 @@ namespace AssetBundleBrowser
                 string[] assetNames = bundle.GetAllAssetNames();
                 foreach (string name in assetNames)
                 {
-                    bundle.LoadAsset(name);
+                    _ = bundle.LoadAsset(name);
                 }
             }
 
@@ -507,8 +503,8 @@ namespace AssetBundleBrowser
                 return;
             }
 
-            record.bundle.Unload(true);
-            m_loadedAssetBundles.Remove(bundleName);
+            record.Bundle.Unload(true);
+            _ = m_loadedAssetBundles.Remove(bundleName);
         }
     }
 }

@@ -34,12 +34,12 @@ namespace AssetBundleBrowser
         /// <summary>
         /// Full path of the asset bundle.
         /// </summary>
-        internal string path { get; private set; }
+        internal string Path { get; private set; }
 
         /// <summary>
         /// Reference to the loaded asset bundle associated with the path.
         /// </summary>
-        internal AssetBundle bundle { get; private set; }
+        internal AssetBundle Bundle { get; private set; }
 
         internal AssetBundleRecord(string path, AssetBundle bundle)
         {
@@ -49,12 +49,12 @@ namespace AssetBundleBrowser
                 string msg = string.Format("AssetBundleRecord encountered invalid parameters path={0}, bundle={1}",
                     path,
                     bundle);
-                
+
                 throw new System.ArgumentException(msg);
             }
 
-            this.path = path;
-            this.bundle = bundle;
+            this.Path = path;
+            this.Bundle = bundle;
         }
     }
 }

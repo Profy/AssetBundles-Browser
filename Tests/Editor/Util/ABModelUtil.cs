@@ -1,23 +1,19 @@
-﻿using System;
+﻿using AssetBundleBrowser.AssetBundleModel;
+
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
+
 using UnityEngine;
-using AssetBundleBrowser.AssetBundleModel;
 
 namespace Assets.AssetBundles_Browser.Editor.Tests.Util
 {
-    class ABModelUtil
+    internal class ABModelUtil
     {
         /// <summary>
         /// Empty texutre for testing purposes
         /// </summary>
-        public static Texture2D FakeTexture2D
-        {
-            get { return new Texture2D(16, 16); }
-        }
+        public static Texture2D FakeTexture2D => new Texture2D(16, 16);
 
         /// <summary>
         /// This is the Models root folder object.
@@ -40,7 +36,6 @@ namespace Assets.AssetBundles_Browser.Editor.Tests.Util
                 FieldInfo info = typeof(Model).GetField("s_BundlesToUpdate", BindingFlags.NonPublic | BindingFlags.Static);
                 List<BundleInfo> bundleInfo = info.GetValue(null) as List<BundleInfo>;
                 return bundleInfo;
-
             }
         }
 
